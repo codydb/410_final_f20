@@ -15,34 +15,40 @@ using namespace std;
 
 //TODO please also make any non-threadsafe APIs threadsafe
 
-const int NUMB_THREADS =20;
-const int MAX_PEOPLE =2;
+const int NUMB_THREADS = 20;
+const int MAX_PEOPLE = 2;
 std::vector<thread> thds;
 
-void log(string s){
-	cout<<s<<endl;
+mutex clubMutie;
+Semaphore spore(MAX_PEOPLE);
+
+void log(string s) {
+	lock_guard<mutex> lck(clubMutie);
+	cout << s << endl;
 }
 
-void inside(int id){
+void inside(int id) {
 	//bask in noisy ambiance
-	log(string("Thread "+to_string(id)+" is inside"));
-	std::this_thread::sleep_for (std::chrono::seconds(1));
+	log(string("Thread " + to_string(id) + " is inside"));
+	std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-void nc(int id){
-	log(string("Thread "+to_string(id)+" waiting to get in"));
-	inside(id);
-	log(string("Thread "+to_string(id)+" has left"));
+void nc(int id) {
+	log(string("Thread " + to_string(id) + " waiting to get in"));
+
+		spore.wait();
+		inside(id);
+		spore.signal();
+
+	log(string("Thread " + to_string(id) + " has left"));
 }
 
 //PLEASE DO NOT CHANGE THIS FUNCTION
-void Nightclub(){
-	for (int j=0;j<NUMB_THREADS;j++){
-			thds.push_back( thread(nc,j));
-		}
+void Nightclub() {
+	for (int j = 0; j < NUMB_THREADS; j++) {
+		thds.push_back(thread(nc, j));
+	}
 
-	for (auto& thd:thds)
+	for (auto &thd : thds)
 		thd.join();
 }
-
-
